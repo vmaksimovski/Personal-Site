@@ -47,6 +47,15 @@ function convertTouch(touchEvent) {
     }
 }
 
+function convertMouse(mouseEvent, isClicked) {
+    return {
+        x: mouseEvent.pageX - offsetX - padding,
+        y: mouseEvent.pageY - offsetY - padding,
+        time: getMsSinceMidnight(new Date()),
+        clicked: isClicked
+    }
+}
+
 function onTouchStart(event) {
     event.preventDefault();
     var touches = event.changedTouches;
@@ -99,19 +108,15 @@ function onTouchMove(event) {
 }
 
 function onMouseDown(event) {
-    pointers.set('mouse', {
-        x: event.pageX - offsetX - padding,
-        y: event.pageY - offsetY - padding,
-        clicked: true
-    });
+    const mouseEvent = convertMouse(event, true);
+    pointers.set('mouse', mouseEvent);
+    pointerHistory.set('mouse', [mouseEvent]);
 }
 
 function onMouseUp(event) {
-    pointers.set('mouse', {
-        x: event.pageX - offsetX - padding,
-        y: event.pageY - offsetY - padding,
-        clicked: false
-    });
+    const mouseEvent = convertMouse(event, false);
+    pointers.set('mouse', mouseEvent);
+    pointerHistory.set('mouse', [mouseEvent]);
 }
 
 function onMouseMove(event) {
@@ -121,11 +126,18 @@ function onMouseMove(event) {
         clicked = mousePointer.clicked;
     }
 
-    pointers.set('mouse', {
-        x: event.pageX - offsetX - padding,
-        y: event.pageY - offsetY - padding,
-        clicked: clicked
-    });
+    const mouseEvent = convertMouse(event, clicked);
+
+    pointers.set('mouse', mouseEvent);
+    var list = pointerHistory.get('mouse');
+    if(list === undefined){
+        list = [];
+    }
+    list.push(mouseEvent);
+    while(list[list.length - 1].time - list[0].time > 150){
+        list.shift();
+    }
+    pointerHistory.set('mouse', list);
 }
 
 function getMsSinceMidnight(d) {
@@ -213,7 +225,7 @@ function drawPoints(width){
                 (pointsY[j] - ptr.y) * (pointsY[j] - ptr.y) +
                 (pointsX[j] - ptr.x) * (pointsX[j] - ptr.x));
             var theta = Math.atan2(pointsY[j] - ptr.y, pointsX[j] - ptr.x);
-            if(ptr.clicked){
+            if(!ptr.clicked){
                 momentY[j] -= 1000/(r**2+1000)*Math.sin(theta);
                 momentX[j] -= 1000/(r**2+1000)*Math.cos(theta);
             } else {
@@ -241,23 +253,26 @@ function drawPoints(width){
 
 function drawTouches(){
     context.fillStyle = '#fff';
-    context.lineCap = "square";
+    context.lineCap = "round";
 
+    var currMs = getMsSinceMidnight(new Date());
     pointerHistory.forEach(function(history){
-        var currMs = history[history.length - 1].time;
         for(var i = 0; i < history.length - 1; i++){
             var prevCoords = history[i];
             var currCoords = history[i + 1];
 
             var avg_age = (history[i].time + history[i + 1].time) / 2;
             var age_ratio = (currMs - avg_age) / 150;
+            if(age_ratio > 1.0){
+                continue;
+            }
             var age_hex = Math.round((1 - age_ratio) * 16).toString(16);
 
+            context.lineWidth = 4;
+            context.strokeStyle = '#00f' + age_hex;
             context.beginPath();
             context.moveTo(prevCoords.x, prevCoords.y);
             context.lineTo(currCoords.x, currCoords.y);
-            context.lineWidth = 4;
-            context.strokeStyle = '#00f' + age_hex;
             context.stroke();
         }
     });
