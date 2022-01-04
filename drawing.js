@@ -99,7 +99,6 @@ function onTouchMove(event) {
 }
 
 function onMouseDown(event) {
-    event.preventDefault();
     pointers.set('mouse', {
         x: event.pageX - offsetX - padding,
         y: event.pageY - offsetY - padding,
@@ -108,7 +107,6 @@ function onMouseDown(event) {
 }
 
 function onMouseUp(event) {
-    event.preventDefault();
     pointers.set('mouse', {
         x: event.pageX - offsetX - padding,
         y: event.pageY - offsetY - padding,
@@ -117,7 +115,6 @@ function onMouseUp(event) {
 }
 
 function onMouseMove(event) {
-    event.preventDefault();
     const mousePointer = pointers.get('mouse');
     var clicked = false;
     if(mousePointer !== undefined){
