@@ -1,10 +1,10 @@
 var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
 
-const padding = 50;
+const padding = 20;
 
-canvas.width = window.innerWidth - 2 * padding;
-canvas.height = window.innerHeight - 2 * padding;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 const size = Math.min(canvas.width, canvas.height);
 const radius = size / 2 - 2; // we subtract 2 so that the clock fits fully in the window
@@ -40,8 +40,8 @@ for (var i = 0; i < pointCount; i++){
 
 function convertTouch(touchEvent) {
     return {
-        x: touchEvent.pageX - offsetX - padding,
-        y: touchEvent.pageY - offsetY - padding,
+        x: touchEvent.pageX - offsetX,
+        y: touchEvent.pageY - offsetY,
         time: getMsSinceMidnight(new Date()),
         clicked: true
     }
@@ -49,8 +49,8 @@ function convertTouch(touchEvent) {
 
 function convertMouse(mouseEvent, isClicked) {
     return {
-        x: mouseEvent.pageX - offsetX - padding,
-        y: mouseEvent.pageY - offsetY - padding,
+        x: mouseEvent.pageX - offsetX,
+        y: mouseEvent.pageY - offsetY,
         time: getMsSinceMidnight(new Date()),
         clicked: isClicked
     }
@@ -218,17 +218,19 @@ function drawPoints(width){
 
     for(var j = 0; j < pointsY.length; j++){
         pointers.forEach(function(ptr){
-            if(-offsetX > ptr.x || -offsetY > ptr.y || ptr.x >= offsetX || ptr.y >= offsetY){
+            if(
+                -(offsetX - padding) > ptr.x ||
+                -(offsetY - padding) > ptr.y ||
+                ptr.x >= (offsetX - padding) ||
+                ptr.y >= (offsetY - padding)
+            ){
                 return;
             }
             var r = Math.sqrt(
                 (pointsY[j] - ptr.y) * (pointsY[j] - ptr.y) +
                 (pointsX[j] - ptr.x) * (pointsX[j] - ptr.x));
             var theta = Math.atan2(pointsY[j] - ptr.y, pointsX[j] - ptr.x);
-            if(!ptr.clicked){
-                momentY[j] -= 1000/(r**2+1000)*Math.sin(theta);
-                momentX[j] -= 1000/(r**2+1000)*Math.cos(theta);
-            } else {
+            if(ptr.clicked){
                 momentY[j] += 1000/(r**2+1000)*Math.sin(theta);
                 momentX[j] += 1000/(r**2+1000)*Math.cos(theta);
             }
